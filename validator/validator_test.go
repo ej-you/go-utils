@@ -31,7 +31,8 @@ var validData = ValidateData{
 	HandFingersAmount: 10,
 }
 
-var validator, trans = GetValidator()
+var trans = GetTranslator()
+var validator = GetValidator(trans)
 
 
 func TestNoOneErrorCases(t *testing.T) {

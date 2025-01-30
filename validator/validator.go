@@ -11,17 +11,21 @@ import (
 )
 
 
-// получение валидатора с настроенной обработкой английского языка
-func GetValidator() (*validatorModule.Validate, *uniTrans.Translator) {
-	validator := validatorModule.New()
-
+// получение "переводчика" для обработки сообщений ошибок валидации
+func GetTranslator() *uniTrans.Translator {
 	en := enLocale.New()
 	uni := uniTrans.New(en, en)
 
 	trans, _ := uni.GetTranslator("en")
-	enTrans.RegisterDefaultTranslations(validator, trans)
+	return &trans
+}
 
-	return validator, &trans
+// получение валидатора с настроенной обработкой английского языка
+func GetValidator(*uniTrans.Translator) *validatorModule.Validate {
+	validator := validatorModule.New()
+	enTrans.RegisterDefaultTranslations(validator, *trans)
+
+	return validator
 }
 
 
