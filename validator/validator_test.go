@@ -1,25 +1,23 @@
 package validator
 
 import (
-    "github.com/google/uuid"
-	validate "github.com/gobuffalo/validate/v3"
-
+	"maps"
 	"testing"
+
+    "github.com/google/uuid"
 )
 
 // структура для проверки валидации
 type ValidateData struct {
-	ID 					uuid.UUID `json:"id" myvalid:"required"`
-	Email 				string `json:"email" myvalid:"email"`
-	Login 				string `json:"login" myvalid:"required|max:10"`
-	Password 			string `json:"password" myvalid:"required|min:5"`
-	Weight 				float64 `json:"weight" myvalid:"required"`
-	Sale 				float64 `json:"sale" myvalid:"min:0|max:100"`
-	Age 				int `json:"age" myvalid:"required|min:0"`
-	HandFingersAmount 	int `json:"handFingersAmount" myvalid:"max:20"`
+	ID 					uuid.UUID `json:"id" myvalid:"required" validate:"required"`
+	Email 				string `json:"email" myvalid:"email" validate:"email"`
+	Login 				string `json:"login" myvalid:"required|max:10" validate:"required,max=10"`
+	Password 			string `json:"password" myvalid:"required|min:5" validate:"required,min=5"`
+	Weight 				float64 `json:"weight" myvalid:"required" validate:"required"`
+	Sale 				float64 `json:"sale" myvalid:"min:0|max:100" validate:"min=0,max=100"`
+	Age 				int `json:"age" myvalid:"required|min:2" validate:"required,min=2"`
+	HandFingersAmount 	int `json:"handFingersAmount" myvalid:"max:20" validate:"max=20"`
 }
-// обязательный метод для валидации
-func (self ValidateData) IsValid(errors *validate.Errors) {}
 
 
 var validData = ValidateData{
@@ -33,11 +31,13 @@ var validData = ValidateData{
 	HandFingersAmount: 10,
 }
 
+var validator, trans = GetValidator()
+
 
 func TestNoOneErrorCases(t *testing.T) {
 	t.Log("Check full valid data")
 	{
-		err := Validate(&validData)
+		err := validator.Struct(&validData)
 		if err != nil {
 			t.Errorf("Unexpected error: %v", err)
 		} else {
@@ -50,7 +50,7 @@ func TestNoOneErrorCases(t *testing.T) {
 		modifiedData := validData
 		modifiedData.Sale = 0.0
 
-		err := Validate(&modifiedData)
+		err := validator.Struct(&modifiedData)
 		if err != nil {
 			t.Errorf("Unexpected error: %v", err)
 		} else {
@@ -63,7 +63,7 @@ func TestNoOneErrorCases(t *testing.T) {
 		modifiedData := validData
 		modifiedData.HandFingersAmount = 0
 
-		err := Validate(&modifiedData)
+		err := validator.Struct(&modifiedData)
 		if err != nil {
 			t.Errorf("Unexpected error: %v", err)
 		} else {
@@ -77,10 +77,11 @@ func TestOneErrorEmptyValuesCases(t *testing.T) {
 	t.Log("Check empty ID")
 	{
 		modifiedData := validData
-		modifiedData.ID = [16]byte{}
+		// modifiedData.ID = [16]byte{}
+		modifiedData.ID = uuid.Nil
 
-		err := Validate(&modifiedData)
-		if err == nil || err.Error() != "code=400, message=map[validate_id:id field must not be blank]" {
+		err := validator.Struct(&modifiedData)
+		if err == nil || err.Error() != "Key: 'ValidateData.ID' Error:Field validation for 'ID' failed on the 'required' tag" {
 			t.Errorf("Unexpected error: %v", err)
 		} else {
 			t.Log("OK. Got 1 error with empty ID")
@@ -92,8 +93,8 @@ func TestOneErrorEmptyValuesCases(t *testing.T) {
 		modifiedData := validData
 		modifiedData.Email = ""
 
-		err := Validate(&modifiedData)
-		if err == nil || err.Error() != "code=400, message=map[validate_email:Email is not in the right format]" {
+		err := validator.Struct(&modifiedData)
+		if err == nil || err.Error() != "Key: 'ValidateData.Email' Error:Field validation for 'Email' failed on the 'email' tag" {
 			t.Errorf("Unexpected error: %v", err)
 		} else {
 			t.Log("OK. Got 1 error with incorrect email")
@@ -105,8 +106,8 @@ func TestOneErrorEmptyValuesCases(t *testing.T) {
 		modifiedData := validData
 		modifiedData.Weight = 0.0
 
-		err := Validate(&modifiedData)
-		if err == nil || err.Error() != "code=400, message=map[validate_weight:weight field must not be blank]" {
+		err := validator.Struct(&modifiedData)
+		if err == nil || err.Error() != "Key: 'ValidateData.Weight' Error:Field validation for 'Weight' failed on the 'required' tag" {
 			t.Errorf("Unexpected error: %v", err)
 		} else {
 			t.Log("OK. Got 1 error with empty weight")
@@ -118,8 +119,8 @@ func TestOneErrorEmptyValuesCases(t *testing.T) {
 		modifiedData := validData
 		modifiedData.Age = 0
 
-		err := Validate(&modifiedData)
-		if err == nil || err.Error() != "code=400, message=map[validate_age:age field must not be blank]" {
+		err := validator.Struct(&modifiedData)
+		if err == nil || err.Error() != "Key: 'ValidateData.Age' Error:Field validation for 'Age' failed on the 'required' tag" {
 			t.Errorf("Unexpected error: %v", err)
 		} else {
 			t.Log("OK. Got 1 error with empty age")
@@ -134,8 +135,8 @@ func TestOneErrorInvalidValuesCases(t *testing.T) {
 		modifiedData := validData
 		modifiedData.Email = "invalid_email"
 
-		err := Validate(&modifiedData)
-		if err == nil || err.Error() != "code=400, message=map[validate_email:Email is not in the right format]" {
+		err := validator.Struct(&modifiedData)
+		if err == nil || err.Error() != "Key: 'ValidateData.Email' Error:Field validation for 'Email' failed on the 'email' tag" {
 			t.Errorf("Unexpected error: %v", err)
 		} else {
 			t.Log("OK. Got 1 error with invalid email")
@@ -147,8 +148,8 @@ func TestOneErrorInvalidValuesCases(t *testing.T) {
 		modifiedData := validData
 		modifiedData.Login = "qwerty0123456789"
 
-		err := Validate(&modifiedData)
-		if err == nil || err.Error() != "code=400, message=map[validate_login:login field must contain less than 10 symbols]" {
+		err := validator.Struct(&modifiedData)
+		if err == nil || err.Error() != "Key: 'ValidateData.Login' Error:Field validation for 'Login' failed on the 'max' tag" {
 			t.Errorf("Unexpected error: %v", err)
 		} else {
 			t.Log("OK. Got 1 error with invalid login")
@@ -160,8 +161,8 @@ func TestOneErrorInvalidValuesCases(t *testing.T) {
 		modifiedData := validData
 		modifiedData.Password = "123"
 
-		err := Validate(&modifiedData)
-		if err == nil || err.Error() != "code=400, message=map[validate_password:password field must contain at least 5 symbols]" {
+		err := validator.Struct(&modifiedData)
+		if err == nil || err.Error() != "Key: 'ValidateData.Password' Error:Field validation for 'Password' failed on the 'min' tag" {
 			t.Errorf("Unexpected error: %v", err)
 		} else {
 			t.Log("OK. Got 1 error with invalid password")
@@ -173,8 +174,8 @@ func TestOneErrorInvalidValuesCases(t *testing.T) {
 		modifiedData := validData
 		modifiedData.Sale = 120.0
 
-		err := Validate(&modifiedData)
-		if err == nil || err.Error() != "code=400, message=map[validate_sale:sale field must be less than or equal to 100.000000]" {
+		err := validator.Struct(&modifiedData)
+		if err == nil || err.Error() != "Key: 'ValidateData.Sale' Error:Field validation for 'Sale' failed on the 'max' tag" {
 			t.Errorf("Unexpected error: %v", err)
 		} else {
 			t.Log("OK. Got 1 error with invalid sale")
@@ -186,8 +187,8 @@ func TestOneErrorInvalidValuesCases(t *testing.T) {
 		modifiedData := validData
 		modifiedData.Age = -50
 
-		err := Validate(&modifiedData)
-		if err == nil || err.Error() != "code=400, message=map[validate_age:age field must be greater than or equal to 0]" {
+		err := validator.Struct(&modifiedData)
+		if err == nil || err.Error() != "Key: 'ValidateData.Age' Error:Field validation for 'Age' failed on the 'min' tag" {
 			t.Errorf("Unexpected error: %v", err)
 		} else {
 			t.Log("OK. Got 1 error with invalid age")
@@ -199,8 +200,8 @@ func TestOneErrorInvalidValuesCases(t *testing.T) {
 		modifiedData := validData
 		modifiedData.HandFingersAmount = 100
 
-		err := Validate(&modifiedData)
-		if err == nil || err.Error() != "code=400, message=map[validate_handFingersAmount:handFingersAmount field must be less than or equal to 20]" {
+		err := validator.Struct(&modifiedData)
+		if err == nil || err.Error() != "Key: 'ValidateData.HandFingersAmount' Error:Field validation for 'HandFingersAmount' failed on the 'max' tag" {
 			t.Errorf("Unexpected error: %v", err)
 		} else {
 			t.Log("OK. Got 1 error with invalid handFingersAmount")
@@ -209,18 +210,28 @@ func TestOneErrorInvalidValuesCases(t *testing.T) {
 }
 
 
-func TestManyErrorsCases(t *testing.T) {
+func TestGetTranslatedMap(t *testing.T) {
 	t.Log("Check invalid login and empty age")
 	{
 		modifiedData := validData
 		modifiedData.Login = "qwerty0123456789"
 		modifiedData.Age = 0
 
-		err := Validate(&modifiedData)
-		if err == nil || err.Error() != "code=400, message=map[validate_age:age field must not be blank validate_login:login field must contain less than 10 symbols]" {
+		err := validator.Struct(&modifiedData)
+		if err == nil { // NOT err
 			t.Errorf("Unexpected error: %v", err)
+			return
+		}
+
+		expectedMap := map[string]string{
+			"validateAge": "Age is a required field",
+			"validateLogin": "Login must be a maximum of 10 characters in length",
+		}
+		errMap := GetTranslatedMap(err, trans)
+		if !maps.Equal(errMap, expectedMap) {
+			t.Errorf("Unexpected map: %v", errMap)
 		} else {
-			t.Log("OK. Got 2 errors with invalid login and empty age")
+			t.Log("OK. Got expected errors map")
 		}
 	}
 }
