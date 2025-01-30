@@ -21,7 +21,7 @@ func GetTranslator() *uniTrans.Translator {
 }
 
 // получение валидатора с настроенной обработкой английского языка
-func GetValidator(*uniTrans.Translator) *validatorModule.Validate {
+func GetValidator(trans *uniTrans.Translator) *validatorModule.Validate {
 	validator := validatorModule.New()
 	enTrans.RegisterDefaultTranslations(validator, *trans)
 
