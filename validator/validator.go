@@ -12,7 +12,7 @@ import (
 
 
 // получение валидатора с настроенной обработкой английского языка
-func GetValidator() (*validatorModule.Validate, uniTrans.Translator) {
+func GetValidator() (*validatorModule.Validate, *uniTrans.Translator) {
 	validator := validatorModule.New()
 
 	en := enLocale.New()
@@ -21,19 +21,19 @@ func GetValidator() (*validatorModule.Validate, uniTrans.Translator) {
 	trans, _ := uni.GetTranslator("en")
 	enTrans.RegisterDefaultTranslations(validator, trans)
 
-	return validator, trans
+	return validator, &trans
 }
 
 
 // получение обработанного словаря ошибок
-func GetTranslatedMap(err error, trans uniTrans.Translator) map[string]string {
+func GetTranslatedMap(err error, trans *uniTrans.Translator) map[string]string {
 	// приводим ошибку к validatorModule.ValidationErrors
 	validateErrors, ok := err.(validatorModule.ValidationErrors)
 	if !ok {
 		return map[string]string{}
 	}
 
-	rawTranstaledMap := validateErrors.Translate(trans)
+	rawTranstaledMap := validateErrors.Translate(*trans)
 	// для обработанного словаря
 	transtaledMap := make(map[string]string, len(rawTranstaledMap))
 
