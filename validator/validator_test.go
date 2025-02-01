@@ -31,14 +31,13 @@ var validData = ValidateData{
 	HandFingersAmount: 10,
 }
 
-var trans = GetTranslator()
-var validator = GetValidator(trans)
+var validator = New()
 
 
 func TestNoOneErrorCases(t *testing.T) {
 	t.Log("Check full valid data")
 	{
-		err := validator.Struct(&validData)
+		err := validator.Validate(&validData)
 		if err != nil {
 			t.Errorf("Unexpected error: %v", err)
 		} else {
@@ -51,7 +50,7 @@ func TestNoOneErrorCases(t *testing.T) {
 		modifiedData := validData
 		modifiedData.Sale = 0.0
 
-		err := validator.Struct(&modifiedData)
+		err := validator.Validate(&modifiedData)
 		if err != nil {
 			t.Errorf("Unexpected error: %v", err)
 		} else {
@@ -64,7 +63,7 @@ func TestNoOneErrorCases(t *testing.T) {
 		modifiedData := validData
 		modifiedData.HandFingersAmount = 0
 
-		err := validator.Struct(&modifiedData)
+		err := validator.Validate(&modifiedData)
 		if err != nil {
 			t.Errorf("Unexpected error: %v", err)
 		} else {
@@ -81,7 +80,7 @@ func TestOneErrorEmptyValuesCases(t *testing.T) {
 		// modifiedData.ID = [16]byte{}
 		modifiedData.ID = uuid.Nil
 
-		err := validator.Struct(&modifiedData)
+		err := validator.Validate(&modifiedData)
 		if err == nil || err.Error() != "Key: 'ValidateData.ID' Error:Field validation for 'ID' failed on the 'required' tag" {
 			t.Errorf("Unexpected error: %v", err)
 		} else {
@@ -94,7 +93,7 @@ func TestOneErrorEmptyValuesCases(t *testing.T) {
 		modifiedData := validData
 		modifiedData.Email = ""
 
-		err := validator.Struct(&modifiedData)
+		err := validator.Validate(&modifiedData)
 		if err == nil || err.Error() != "Key: 'ValidateData.Email' Error:Field validation for 'Email' failed on the 'email' tag" {
 			t.Errorf("Unexpected error: %v", err)
 		} else {
@@ -107,7 +106,7 @@ func TestOneErrorEmptyValuesCases(t *testing.T) {
 		modifiedData := validData
 		modifiedData.Weight = 0.0
 
-		err := validator.Struct(&modifiedData)
+		err := validator.Validate(&modifiedData)
 		if err == nil || err.Error() != "Key: 'ValidateData.Weight' Error:Field validation for 'Weight' failed on the 'required' tag" {
 			t.Errorf("Unexpected error: %v", err)
 		} else {
@@ -120,7 +119,7 @@ func TestOneErrorEmptyValuesCases(t *testing.T) {
 		modifiedData := validData
 		modifiedData.Age = 0
 
-		err := validator.Struct(&modifiedData)
+		err := validator.Validate(&modifiedData)
 		if err == nil || err.Error() != "Key: 'ValidateData.Age' Error:Field validation for 'Age' failed on the 'required' tag" {
 			t.Errorf("Unexpected error: %v", err)
 		} else {
@@ -136,7 +135,7 @@ func TestOneErrorInvalidValuesCases(t *testing.T) {
 		modifiedData := validData
 		modifiedData.Email = "invalid_email"
 
-		err := validator.Struct(&modifiedData)
+		err := validator.Validate(&modifiedData)
 		if err == nil || err.Error() != "Key: 'ValidateData.Email' Error:Field validation for 'Email' failed on the 'email' tag" {
 			t.Errorf("Unexpected error: %v", err)
 		} else {
@@ -149,7 +148,7 @@ func TestOneErrorInvalidValuesCases(t *testing.T) {
 		modifiedData := validData
 		modifiedData.Login = "qwerty0123456789"
 
-		err := validator.Struct(&modifiedData)
+		err := validator.Validate(&modifiedData)
 		if err == nil || err.Error() != "Key: 'ValidateData.Login' Error:Field validation for 'Login' failed on the 'max' tag" {
 			t.Errorf("Unexpected error: %v", err)
 		} else {
@@ -162,7 +161,7 @@ func TestOneErrorInvalidValuesCases(t *testing.T) {
 		modifiedData := validData
 		modifiedData.Password = "123"
 
-		err := validator.Struct(&modifiedData)
+		err := validator.Validate(&modifiedData)
 		if err == nil || err.Error() != "Key: 'ValidateData.Password' Error:Field validation for 'Password' failed on the 'min' tag" {
 			t.Errorf("Unexpected error: %v", err)
 		} else {
@@ -175,7 +174,7 @@ func TestOneErrorInvalidValuesCases(t *testing.T) {
 		modifiedData := validData
 		modifiedData.Sale = 120.0
 
-		err := validator.Struct(&modifiedData)
+		err := validator.Validate(&modifiedData)
 		if err == nil || err.Error() != "Key: 'ValidateData.Sale' Error:Field validation for 'Sale' failed on the 'max' tag" {
 			t.Errorf("Unexpected error: %v", err)
 		} else {
@@ -188,7 +187,7 @@ func TestOneErrorInvalidValuesCases(t *testing.T) {
 		modifiedData := validData
 		modifiedData.Age = -50
 
-		err := validator.Struct(&modifiedData)
+		err := validator.Validate(&modifiedData)
 		if err == nil || err.Error() != "Key: 'ValidateData.Age' Error:Field validation for 'Age' failed on the 'min' tag" {
 			t.Errorf("Unexpected error: %v", err)
 		} else {
@@ -201,7 +200,7 @@ func TestOneErrorInvalidValuesCases(t *testing.T) {
 		modifiedData := validData
 		modifiedData.HandFingersAmount = 100
 
-		err := validator.Struct(&modifiedData)
+		err := validator.Validate(&modifiedData)
 		if err == nil || err.Error() != "Key: 'ValidateData.HandFingersAmount' Error:Field validation for 'HandFingersAmount' failed on the 'max' tag" {
 			t.Errorf("Unexpected error: %v", err)
 		} else {
@@ -218,17 +217,21 @@ func TestGetTranslatedMap(t *testing.T) {
 		modifiedData.Login = "qwerty0123456789"
 		modifiedData.Age = 0
 
-		err := validator.Struct(&modifiedData)
+		err := validator.Validate(&modifiedData)
 		if err == nil { // NOT err
 			t.Errorf("Unexpected error: %v", err)
 			return
 		}
 
 		expectedMap := map[string]string{
-			"validateAge": "Age is a required field",
-			"validateLogin": "Login must be a maximum of 10 characters in length",
+			"fieldAge": "Age is a required field",
+			"fieldLogin": "Login must be a maximum of 10 characters in length",
 		}
-		errMap := GetTranslatedMap(err, trans)
+		errMap, ok := validator.GetMapFromValidationError(err)
+		if !ok {
+			t.Errorf("Unexpected type of error interface (NOT validatorModule.ValidationErrors)")
+		}
+
 		if !maps.Equal(errMap, expectedMap) {
 			t.Errorf("Unexpected map: %v", errMap)
 		} else {

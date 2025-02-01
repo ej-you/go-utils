@@ -4,18 +4,6 @@
 
 ### Submodules:
 
-1. `env` funcs:
+1. `env` allows you to check all needed ENV variables is presented
 
-* MustBePresented(envVars ...string)
-
-> Description
-> <br>
-> Input: env variables names
-> <br>
-> Output: -
-> <br>
-> Panic if at least one given env variable is not presented
-> <br>
-> Example: MustBePresented("VAR1", "VAR2")
-
-2. `validator`
+2. `validator` is abstract layer above go-playground/validator with `en` translation

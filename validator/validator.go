@@ -6,38 +6,45 @@ import (
 	validatorModule "github.com/go-playground/validator/v10"
 
 	enLocale "github.com/go-playground/locales/en"
-	uniTrans "github.com/go-playground/universal-translator"
+	ut "github.com/go-playground/universal-translator"
 	enTrans "github.com/go-playground/validator/v10/translations/en"
 )
 
 
-// получение "переводчика" для обработки сообщений ошибок валидации
-func GetTranslator() *uniTrans.Translator {
-	en := enLocale.New()
-	uni := uniTrans.New(en, en)
-
-	trans, _ := uni.GetTranslator("en")
-	return &trans
+type Validator struct {
+	ValidatorInstance	*validatorModule.Validate
+	Translator			ut.Translator
 }
+
 
 // получение валидатора с настроенной обработкой английского языка
-func GetValidator(trans *uniTrans.Translator) *validatorModule.Validate {
-	validator := validatorModule.New()
-	enTrans.RegisterDefaultTranslations(validator, *trans)
+func New() *Validator {
+	en := enLocale.New()
+	uni := ut.New(en, en)
+	trans, _ := uni.GetTranslator("en")
 
-	return validator
+	validate := validatorModule.New(validatorModule.WithRequiredStructEnabled())
+	enTrans.RegisterDefaultTranslations(validate, trans)
+
+	return &Validator{validate, trans}
 }
 
 
-// получение обработанного словаря ошибок
-func GetTranslatedMap(err error, trans *uniTrans.Translator) map[string]string {
+// валидация переданной через указатель структуры s, возвращает validatorModule.ValidationErrors
+func (this *Validator) Validate(s any) error {
+	return this.ValidatorInstance.Struct(s)
+}
+
+
+// получение обработанного словаря ошибок (второй параметр - false для неудачного приведения к validatorModule.ValidationErrors)
+func (this Validator) GetMapFromValidationError(err error) (map[string]string, bool) {
 	// приводим ошибку к validatorModule.ValidationErrors
 	validateErrors, ok := err.(validatorModule.ValidationErrors)
 	if !ok {
-		return map[string]string{}
+		return nil, ok
 	}
 
-	rawTranstaledMap := validateErrors.Translate(*trans)
+	rawTranstaledMap := validateErrors.Translate(this.Translator)
 	// для обработанного словаря
 	transtaledMap := make(map[string]string, len(rawTranstaledMap))
 
@@ -45,8 +52,8 @@ func GetTranslatedMap(err error, trans *uniTrans.Translator) map[string]string {
 	var key string
 	for k, v := range rawTranstaledMap {
 		tempSlice = strings.Split(k, ".")
-		key = "validate" + tempSlice[len(tempSlice) - 1]
+		key = "field" + tempSlice[len(tempSlice) - 1]
 		transtaledMap[key] = v
 	}
-	return transtaledMap
+	return transtaledMap, ok
 }
