@@ -239,3 +239,31 @@ func TestGetTranslatedMap(t *testing.T) {
 		}
 	}
 }
+
+
+func TestGetTranslatedString(t *testing.T) {
+	t.Log("Check invalid login and empty age")
+	{
+		modifiedData := validData
+		modifiedData.Login = "qwerty0123456789"
+		modifiedData.Age = 0
+
+		err := validator.Validate(&modifiedData)
+		if err == nil { // NOT err
+			t.Errorf("Unexpected error: %v", err)
+			return
+		}
+
+		expectedString := "fieldLogin: Login must be a maximum of 10 characters in length" + " | " + "fieldAge: Age is a required field"
+		errString, ok := validator.GetStringFromValidationError(err)
+		if !ok {
+			t.Errorf("Unexpected type of error interface (NOT validatorModule.ValidationErrors)")
+		}
+
+		if errString != expectedString {
+			t.Errorf("Unexpected string: %v", errString)
+		} else {
+			t.Log("OK. Got expected errors string")
+		}
+	}
+}

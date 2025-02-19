@@ -57,3 +57,27 @@ func (this Validator) GetMapFromValidationError(err error) (map[string]string, b
 	}
 	return transtaledMap, ok
 }
+
+
+// получение объединенной строки с ошибками (второй параметр - false для неудачного приведения к validatorModule.ValidationErrors)
+func (this Validator) GetStringFromValidationError(err error) (string, bool) {
+	// приводим ошибку к validatorModule.ValidationErrors
+	validateErrors, ok := err.(validatorModule.ValidationErrors)
+	if !ok {
+		return "", ok
+	}
+
+	rawTranstaledMap := validateErrors.Translate(this.Translator)
+	// для объединенной строки
+	transtaledStringSlice := make([]string, 0, len(rawTranstaledMap))
+
+	var tempSlice []string
+	var key string
+	for k, v := range rawTranstaledMap {
+		tempSlice = strings.Split(k, ".")
+		key = "field" + tempSlice[len(tempSlice) - 1]
+
+		transtaledStringSlice = append(transtaledStringSlice, key+": "+v)
+	}
+	return strings.Join(transtaledStringSlice, " | "), ok
+}
