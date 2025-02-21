@@ -1,6 +1,7 @@
 package validator
 
 import (
+	"fmt"
 	"maps"
 	"testing"
 
@@ -242,7 +243,7 @@ func TestGetTranslatedMap(t *testing.T) {
 
 
 func TestGetTranslatedString(t *testing.T) {
-	t.Log("Check invalid login and empty age")
+	t.Log("Check invalid login and empty age (and validation error is wrapped)")
 	{
 		modifiedData := validData
 		modifiedData.Login = "qwerty0123456789"
@@ -253,9 +254,10 @@ func TestGetTranslatedString(t *testing.T) {
 			t.Errorf("Unexpected error: %v", err)
 			return
 		}
+		wrappedErr := fmt.Errorf("expected error: %w", err)
 
 		expectedString := "fieldLogin: Login must be a maximum of 10 characters in length" + " | " + "fieldAge: Age is a required field"
-		errString, ok := validator.GetStringFromValidationError(err)
+		errString, ok := validator.GetStringFromValidationError(wrappedErr)
 		if !ok {
 			t.Errorf("Unexpected type of error interface (NOT validatorModule.ValidationErrors)")
 		}
@@ -263,7 +265,7 @@ func TestGetTranslatedString(t *testing.T) {
 		if errString != expectedString {
 			t.Errorf("Unexpected string: %v", errString)
 		} else {
-			t.Log("OK. Got expected errors string")
+			t.Logf("OK. Got expected errors string")
 		}
 	}
 }

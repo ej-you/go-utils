@@ -1,6 +1,7 @@
 package validator
 
 import (
+	"errors"
 	"strings"
 
 	validatorModule "github.com/go-playground/validator/v10"
@@ -39,9 +40,9 @@ func (this *Validator) Validate(s any) error {
 // получение обработанного словаря ошибок (второй параметр - false для неудачного приведения к validatorModule.ValidationErrors)
 func (this Validator) GetMapFromValidationError(err error) (map[string]string, bool) {
 	// приводим ошибку к validatorModule.ValidationErrors
-	validateErrors, ok := err.(validatorModule.ValidationErrors)
-	if !ok {
-		return nil, ok
+	var validateErrors validatorModule.ValidationErrors
+	if !errors.As(err, &validateErrors) {
+		return nil, false
 	}
 
 	rawTranstaledMap := validateErrors.Translate(this.Translator)
@@ -55,16 +56,16 @@ func (this Validator) GetMapFromValidationError(err error) (map[string]string, b
 		key = "field" + tempSlice[len(tempSlice) - 1]
 		transtaledMap[key] = v
 	}
-	return transtaledMap, ok
+	return transtaledMap, true
 }
 
 
 // получение объединенной строки с ошибками (второй параметр - false для неудачного приведения к validatorModule.ValidationErrors)
 func (this Validator) GetStringFromValidationError(err error) (string, bool) {
 	// приводим ошибку к validatorModule.ValidationErrors
-	validateErrors, ok := err.(validatorModule.ValidationErrors)
-	if !ok {
-		return "", ok
+	var validateErrors validatorModule.ValidationErrors
+	if !errors.As(err, &validateErrors) {
+		return "", false
 	}
 
 	rawTranstaledMap := validateErrors.Translate(this.Translator)
@@ -79,5 +80,5 @@ func (this Validator) GetStringFromValidationError(err error) (string, bool) {
 
 		transtaledStringSlice = append(transtaledStringSlice, key+": "+v)
 	}
-	return strings.Join(transtaledStringSlice, " | "), ok
+	return strings.Join(transtaledStringSlice, " | "), true
 }
